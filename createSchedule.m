@@ -1,54 +1,48 @@
-function [s, extras] = createSchedule( dataFilename, scheduleStart, ...
-                                       scheduleFinish )
-%Creates a schedule based on the events data in a text file.
-%   dataFilename is a string that names the text data file.
-%   All events in dataFilename are added to a schedule within a window from
-%   scheduleStart to scheduleFinish.  The events are then scheduled using
-%   a heuristic (given in class Schedule), and the schedule is drawn.
-%   dataFilename is the name of a file encoding data for all events to add
-%   to the newly created schedule. Events are encoded in a given line L as 
-%   follows: id = L(3:6), startAvailable = L(8:11), endAvailable= L(13:16),
-%   duration = L(18:21), and importance = L(23:28). L(1) is 'e' if the line
-%   represents a base Event, while L(1) is 'c' if it is a Course.  If the
-%   event is a course, L(30:end) encodes the name of the course.
+function [s, extras] = createSchedule(dataFilename, scheduleStart, scheduleFinish)
+    % Creates a schedule from event data in a text file.
+    %   dataFilename: String, the name of the text data file.
+    %   scheduleStart, scheduleFinish: Numerical values defining the scheduling window.
+    %   Events are added and scheduled using a heuristic defined in the Schedule class.
 
-% Open the appropriate file
-eventDataFile=fopen(dataFilename);
-% Instantiate a Schedule object (no event is scheduled yet)
-s = Schedule(scheduleStart, scheduleFinish, 'My Schedule');
-
-% Read data from file and add the Event (or Course) to s.eventArray
-%%%% Write your code below %%%%
-%reads until end and assigns variables to each char or number
-
-while ~feof(eventDataFile)
-    L= fgetl(eventDataFile);
-    id =str2double(L(3:6));
-    startAvailable=str2double(L(8:11));
-    endAvailable=str2double(L(13:16));
-    duration =str2double(L(18:21));
-    importance =str2double(L(23:28));
-    if length(L)<30
-        s.addEvent(Event(startAvailable, endAvailable, duration, ...
-                           importance, id))
-    else
-    courseName=L(30:end);
-    s.addEvent(Course(startAvailable, endAvailable, duration, ...
-                           importance, id,courseName))
+    % Open the data file
+    fid = fopen(dataFilename, 'r');
+    if fid == -1
+        error('Failed to open file: %s', dataFilename);
     end
-end 
+    
+    % Create a new schedule with the given name and window
+    s = Schedule(scheduleStart, scheduleFinish, 'My Schedule');
 
+    % Read each line from the file and create corresponding events
+    while ~feof(fid)
+        line = fgetl(fid);
+        id = str2double(line(3:6));
+        startAvailable = str2double(line(8:11));
+        endAvailable = str2double(line(13:16));
+        duration = str2double(line(18:21));
+        importance = str2double(line(23:28));
+        
+        if line(1) == 'e'
+            % Base event
+            event = Event(startAvailable, endAvailable, duration, importance, id);
+        elseif line(1) == 'c' && length(line) >= 30
+            % Course event
+            courseName = line(30:end);
+            event = Course(startAvailable, endAvailable, duration, importance, id, courseName);
+        else
+            error('Invalid event type or incomplete data in line: %s', line);
+        end
+        
+        % Add event to the schedule
+        s.addEvent(event);
+    end
 
-% Close the data file
-fclose(eventDataFile);
+    % Close the file
+    fclose(fid);
 
-% Schedule the events
-%%%% Write your code below %%%%
-extras=s.scheduleEvents();
+    % Attempt to schedule the events using the heuristic defined in Schedule class
+    extras = s.scheduleEvents();
 
-% Draw the schedule
-%%%% Write your code below %%%%
-s.draw();
-
+    % Draw the schedule
+    s.draw();
 end
-
