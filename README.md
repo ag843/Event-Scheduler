@@ -17,8 +17,8 @@ Manages a collection of `Event` objects within a specified scheduling window. Th
 #### Course
 A subclass of `Event` that adds a specific course name as an additional property. It is treated similarly to events but includes the course name in its visualization.
 
-### Running Tests
+## Running Tests
 To test the functionality of each class, you can use the provided script testScript.m. This script includes specific test cases to verify the correct behavior of each component in isolation and in combination. Uncomment the sections of the script to perform the tests.
 
-##Copyright
+## Copyright
 Portions of this project are designated as starter code and are derived from Cornell University's CS 1112 class materials. These portions are clearly marked within the code comments as originating from Cornell CS 1112. Use of these materials in this project does not imply endorsement by Cornell University of the other contents of this project.
