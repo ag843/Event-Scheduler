@@ -3,7 +3,7 @@
 ## Overview
 This project provides a set of MATLAB classes designed to facilitate event scheduling within defined intervals. The core components include the classes `Interval`, `Event`, `Schedule`, and `Course`, each of which plays a role in creating a flexible and robust scheduler.
 
-### Components
+## Components
 
 #### Interval
 Represents a time interval with a start (`left`) and end (`right`) point. Offers functionality to determine overlaps with other intervals and compute interval width.
@@ -17,5 +17,8 @@ Manages a collection of `Event` objects within a specified scheduling window. Th
 #### Course
 A subclass of `Event` that adds a specific course name as an additional property. It is treated similarly to events but includes the course name in its visualization.
 
-#### Running Tests
+### Running Tests
 To test the functionality of each class, you can use the provided script testScript.m. This script includes specific test cases to verify the correct behavior of each component in isolation and in combination. Uncomment the sections of the script to perform the tests.
+
+##Copyright
+Portions of this project are designated as starter code and are derived from Cornell University's CS 1112 class materials. These portions are clearly marked within the code comments as originating from Cornell CS 1112. Use of these materials in this project does not imply endorsement by Cornell University of the other contents of this project.
