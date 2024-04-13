@@ -1,138 +1,96 @@
 classdef Schedule < handle
-% A schedule has an Interval window in which events can be scheduled and 
-% a cell array of Events.
-    
+    % Schedule manages a set of events within a specified time window.
+
     properties (SetAccess = private)
-        sname= 'Test Schedule';                % The name of the schedule
-        window= Interval.empty(); % The Interval in which events can be 
-                                  %   scheduled
-        eventArray= {};           % The cell array of events
+        sname = 'Test Schedule'; % The name of the schedule
+        window = Interval.empty(); % The Interval in which events can be scheduled
+        eventArray = {}; % The cell array of events
     end
-    
+
     methods
-        function s = Schedule(startTime, endTime, scheduleName)
-        % Construct schedule s.  s.window goes from startTime to endTime.
-        % s.sname is the string name that is shown on the schedule.
-        % s.eventArray starts as an empty cell array.
-            %%%% Write your code below %%%%
-            if nargin==2
-                s.window=Interval(statTime, endTime); 
-            end 
-            if nargin==3
-                s.sname=scheduleName;
-            end 
-            %Schedule starts off empty
-            s.eventArray={};
+        function obj = Schedule(startTime, endTime, scheduleName)
+            % Constructor for Schedule class.
+            if nargin >= 2
+                obj.window = Interval(startTime, endTime); % Create scheduling window
+                if nargin == 3
+                    obj.sname = scheduleName; % Set schedule name if provided
+                end
+            else
+                error('Insufficient input arguments');
+            end
+            obj.eventArray = {}; % Initialize with an empty event array
         end
-        
-        function addEvent(self, ev)
-        % Adds Event ev to the end of self.eventArray
-            %%%% Write your code below %%%%
-            self.eventArray{length(self.eventArray)+1}=ev;
-            %self.eventArray{size(self.eventArray)+1}=ev;
-        end
-        
-        function extras = scheduleEvents(self)
-        % Schedule events from self.eventArray in self.window.  First
-        % unschedules all events.  Then use a heuristic to schedule events
-        % as follows:
-        % 1. Define a "remaining window," which is the window available for
-        %    scheduling events.  Initialize the remaining window to be the 
-        %    same as window (same left and reight ends).
-        % 2. Find the earliest unscheduled event that can be scheduled in
-        %    the remaining window.
-        % 3. If multiple events have the same earliest time, choose the
-        %    event with the highest ratio of importance to duration.
-        % 4. If the event is scheduled, update the remaining window.
-        % 5. Repeat steps 2 to 4 until no events can be scheduled.
-        % extras is a cell array of the Events (and Courses) that did not
-        % get scheduled.  The length of extras is the number of events that
-        % did not get scheduled.  If all events got scheduled then extras
-        % is the empty cell array {}.
-            
-            %%%% Write your code below %%%%
 
-            %Unschedules everything 
-            for i=1:1:length(self.eventArray)
-                unschedule(self.eventArray{i})
-            end 
-            %initialize remianing window --> 
-            remainingWindow=Interval(self.window.left, self.window.right);
-            canSchedule=true;
-            while canSchedule==true
-                %Find the earliest unscheduled event or the event with highest
-                %ratio of importance to duration 
-                %Question: how do you compare it to the previous earliest
-                %class?
-                canSchedule=false;
-                prevRatio=0;
-                earliestTime=inf;
-                for k=1:1:length(self.eventArray)
-                   eventIndex=0;
-                   startTime=self.eventArray{k}.earliestTime(remainingWindow);
-                    if self.eventArray{k}.scheduledTime==-1 && startTime~=inf
-                        if startTime>earliestTime || (startTime==earliestTime ...
-                          && self.eventArray{k}.importance/self.eventArray{k}.duration ...
-                          > prevRatio)
-                            %store earliesttime and the ratio of that event
-                            earliestTime=earliestTime(self.eventArray{k}, reaminingWindow);
-                            eventIndex=k;
-                            prevRatio=self.eventArray{k}.importance/self.eventArray{k}.duration; 
+        function addEvent(obj, ev)
+            % Adds an Event to the end of the event array.
+            obj.eventArray{end+1} = ev;
+        end
+
+        function extras = scheduleEvents(obj)
+            % Attempts to schedule all events within the window, following specific heuristics.
+            % Unschedules all events first
+            arrayfun(@(e) e.unschedule(), obj.eventArray);
+
+            % Initialize the remaining window to be the same as the main window
+            remainingWindow = obj.window;
+            scheduledSomething = true;
+            extras = {};
+
+            while scheduledSomething
+                scheduledSomething = false;
+                earliestTime = inf;
+                bestEventIndex = 0;
+                bestRatio = 0;
+
+                for i = 1:length(obj.eventArray)
+                    event = obj.eventArray{i};
+                    if event.scheduledTime == -1  % Check only unscheduled events
+                        startTime = event.earliestTime(remainingWindow);
+                        ratio = event.importance / event.duration;
+                        if (startTime < earliestTime) || (startTime == earliestTime && ratio > bestRatio)
+                            earliestTime = startTime;
+                            bestEventIndex = i;
+                            bestRatio = ratio;
+                            scheduledSomething = true;
                         end
-                    end 
-                end 
+                    end
+                end
 
-                if eventIndex~=0
-                %Update remaingWindow and schedule event 
-                    setScheduledTime(self.eventArray{eventIndex}, earliestTime)
-                    canSchedule=true; 
-                    remainingWindow.left= earliestTime + self.eventArray{eventIndex}.duration;%the earliestTime + the event duration 
-                    eventIndex=eventIndex+1;
-                end 
-            end 
-
-            %Find extras 
-            extras={};
-            extrasIndex=1;
-            %check each event to see if it was unscheduled 
-            for j=1:1:length(self.eventArray)
-                if self.eventArray{j}.scheduledTime==-1
-                    extras{extrasIndex}=self.eventArray{j};
-                    extrasIndex=extrasIndex+1;
-                end 
-            end 
-        end
-        
-        function draw(self)
-        % Draws the scedule and all the events.  This method sets up the 
-        % figure window, shows the title (self.sname), labels the axes, and 
-        % draws each event.  Figure window should be made full screen, 
-        % ticks on the y-axis should only be drawn at integer (id) values 
-        % and the axes should enclose only the scheduling window in the 
-        % x-direction and only the range of event ids in the y-direction.
-           minId=1;
-           maxId=10;
-           xmin=0;
-           xmax=10;
-            figure('units','normalized','outerposition',[0 .05 1 .95], 'name', 'Schedule')
-            hold on
-            set(gca, 'ytick', minId:maxId)
-            title(self.sname);
-            xlabel('the time(s)');
-            ylabel('ID');
-            axis([xmin xmax minId-1 maxId+1])
-            hold off
-            %%%% Write your code below %%%%
-            %maxId=0;
-            %drawss the event
-            if length(self.eventArray)~=0
-            for i=1:length(self.eventArray)
-                self.eventArray{i}.draw
-            end
+                if scheduledSomething && bestEventIndex ~= 0
+                    event = obj.eventArray{bestEventIndex};
+                    event.setScheduledTime(earliestTime);
+                    remainingWindow.left = earliestTime + event.duration; % Update the remaining window
+                end
             end
 
+            % Gather unscheduled events
+            extras = obj.eventArray([obj.eventArray.scheduledTime] == -1);
         end
-    end %methods
-    
+
+        function draw(obj)
+            % Sets up the figure window and draws the schedule and all events.
+            figure('units', 'normalized', 'outerposition', [0 0.05 1 0.95]);
+            hold on;
+            title(obj.sname);
+            xlabel('Time');
+            ylabel('Event ID');
+
+            % Calculate the min and max ID for axis scaling
+            if ~isempty(obj.eventArray)
+                ids = arrayfun(@(e) e.getId(), obj.eventArray);
+                minId = min(ids);
+                maxId = max(ids);
+            else
+                minId = 0;
+                maxId = 1;
+            end
+
+            axis([obj.window.left obj.window.right minId-1 maxId+1]);
+            set(gca, 'ytick', minId:maxId);
+
+            % Draw each event
+            cellfun(@(e) e.draw(), obj.eventArray);
+            hold off;
+        end
+    end
 end
-
